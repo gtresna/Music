@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapFlow - XXXTentacion & Rapper Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: calc(100vh - 160px);
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .playlist-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        .playlist-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+
+        .playlist-card.active {
+            background: linear-gradient(135deg, rgba(255,107,107,0.4), rgba(78,205,196,0.4));
+            border: 2px solid #ff6b6b;
+        }
+
+        .playlist-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .playlist-icon {
+            font-size: 2rem;
+        }
+
+        .playlist-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .tracks-list {
+            list-style: none;
+        }
+
+        .track-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        .track-item:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+
+        .track-item.playing {
+            background: linear-gradient(90deg, rgba(255,107,107,0.4), rgba(78,205,196,0.4));
+            box-shadow: 0 0 20px rgba(255,107,107,0.5);
+        }
+
+        .track-number {
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-width: 30px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .track-info {
+            flex: 1;
+        }
+
+        .track-title {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .track-artist {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Player */
+        .player-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(25px);
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .player-container.active {
+            display: flex;
+        }
+
+        .player-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .player-artwork {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .player-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-info p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.6rem;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.1);
+        }
+
+        .play-pause-btn {
+            font-size: 2.2rem;
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            box-shadow: 0 10px 30px rgba(255,107,107,0.4);
+        }
+
+        .progress-container {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s ease;
+            position: relative;
+        }
+
+        .progress::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,107,107,0.6);
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .track-item:nth-child(1) { animation-delay: 0.1s; }
+        .track-item:nth-child(2) { animation-delay: 0.2s; }
+        .track-item:nth-child(3) { animation-delay: 0.3s; }
+        .track-item:nth-child(4) { animation-delay: 0.4s; }
+
+        @media (max-width: 768px) {
+            .playlist-grid {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🎵 RapFlow - XXXTentacion Player</div>
+    </header>
+
+    <main class="main-content">
+        <h1 class="section-title">🔥 XXXTentacion & Rap Legends</h1>
+        
+        <div class="playlist-grid">
+            <!-- XXXTentacion -->
+            <div class="playlist-card active" data-playlist="xxtentacion">
+                <div class="playlist-header">
+                    <div class="playlist-icon">💔</div>
+                    <div class="playlist-title">XXXTENTACION Classics</div>
+                </div>
+                <ul class="tracks-list">
+                    <li class="track-item" data-track="sad">
+                        <span class="track-number">01</span>
+                        <div class="track-info">
+                            <div class="track-title">SAD!</div>
+                            <div class="track-artist">XXXTENTACION</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="changes">
+                        <span class="track-number">02</span>
+                        <div class="track-info">
+                            <div class="track-title">changes</div>
+                            <div class="track-artist">XXXTENTACION</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="moonlight">
+                        <span class="track-number">03</span>
+                        <div class="track-info">
+                            <div class="track-title">moonlight</div>
+                            <div class="track-artist">XXXTENTACION</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="jocelyn">
+                        <span class="track-number">04</span>
+                        <div class="track-info">
+                            <div class="track-title">JOCELYN FLORES</div>
+                            <div class="track-artist">XXXTENTACION</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Juice WRLD -->
+            <div class="playlist-card" data-playlist="juice">
+                <div class="playlist-header">
+                    <div class="playlist-icon">😭</div>
+                    <div class="playlist-title">Juice WRLD Hits</div>
+                </div>
+                <ul class="tracks-list">
+                    <li class="track-item" data-track="lucid">
+                        <span class="track-number">01</span>
+                        <div class="track-info">
+                            <div class="track-title">Lucid Dreams</div>
+                            <div class="track-artist">Juice WRLD</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="allgirls">
+                        <span class="track-number">02</span>
+                        <div class="track-info">
+                            <div class="track-title">All Girls Are The Same</div>
+                            <div class="track-artist">Juice WRLD</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="robbery">
+                        <span class="track-number">03</span>
+                        <div class="track-info">
+                            <div class="track-title">Robbery</div>
+                            <div class="track-artist">Juice WRLD</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Playboi Carti -->
+            <div class="playlist-card" data-playlist="carti">
+                <div class="playlist-header">
+                    <div class="playlist-icon">👹</div>
+                    <div class="playlist-title">Playboi Carti Rage</div>
+                </div>
+                <ul class="tracks-list">
+                    <li class="track-item" data-track="sky">
+                        <span class="track-number">01</span>
+                        <div class="track-info">
+                            <div class="track-title">SKY</div>
+                            <div class="track-artist">Playboi Carti</div>
+                        </div>
+                    </li>
+                    <li class="track-item" data-track="stopbreathing">
+                        <span class="track-number">02</span>
+                        <div class="track-info">
+                            <div class="track-title">STOP BREATHING</div>
+                            <div class="track-artist">Playboi Carti</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- YouTube Player Container -->
+    <div id="youtube-player"></div>
+
+    <!-- Music Player UI -->
+    <div class="player-container" id="musicPlayer">
+        <div class="player-left">
+            <img id="playerThumbnail" src="" alt="Track Thumbnail" class="player-artwork">
+            <div class="player-info">
+                <h3 id="playerTitle">Pilih lagu</h3>
+                <p id="playerArtist">--</p>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <button class="control-btn" id="prevTrack" title="Sebelumnya">
+                <i class="fas fa-step-backward"></i>
+            </button>
+            <button class="control-btn play-pause-btn" id="playPause" title="Play/Pause">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="control-btn" id="nextTrack" title="Selanjutnya">
+                <i class="fas fa-step-forward"></i>
+            </button>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress" id="progressFill"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="totalDuration">--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+        let currentTrack = null;
+        let isPlaying = false;
+        let currentPlaylist = [];
+        let currentIndex = 0;
+
+        // DATABASE LAGU ASLI SESUAI JUDUL & ARTIS
+        const tracks = {
+            sad: {
+                title: "SAD!",
+                artist: "XXXTENTACION",
+                videoId: "v0z8D8FhZi0",
+                thumbnail: "https://i.ytimg.com/vi/v0z8D8FhZi0/maxresdefault.jpg"
+            },
+            changes: {
+                title: "changes",
+                artist: "XXXTENTACION", 
+                videoId: "R6m7l4n1ifo",
+                thumbnail: "https://i.ytimg.com/vi/R6m7l4n1ifo/maxresdefault.jpg"
+            },
+            moonlight: {
+                title: "moonlight",
+                artist: "XXXTENTACION",
+                videoId: "gY2w6G1X7qY",
+                thumbnail: "https://i.ytimg.com/vi/gY2w6G1X7qY/maxresdefault.jpg"
+            },
+            jocelyn: {
+                title: "JOCELYN FLORES",
+                artist: "XXXTENTACION",
+                videoId: "bAXWRwO5fEE",
+                thumbnail: "https://i.ytimg.com/vi/bAXWRwO5fEE/maxresdefault.jpg"
+            },
+            lucid: {
+                title: "Lucid Dreams",
+                artist: "Juice WRLD",
+                videoId: "P9F6m8mHFcM",
+                thumbnail: "https://i.ytimg.com/vi/P9F6m8mHFcM/maxresdefault.jpg"
+            },
+            allgirls: {
+                title: "All Girls Are The Same",
+                artist: "Juice WRLD",
+                videoId: "U7AmN1TXMXE",
+                thumbnail: "https://i.ytimg.com/vi/U7AmN1TXMXE/maxresdefault.jpg"
+            },
+            robbery: {
+                title: "Robbery",
+                artist: "Juice WRLD",
+                videoId: "D9HYCd3XOE8",
+                thumbnail: "https://i.ytimg.com/vi/D9HYCd3XOE8/maxresdefault.jpg"
+            },
+            sky: {
+                title: "SKY",
+                artist: "Playboi Carti",
+                videoId: "i8tS54L5v4A",
+                thumbnail: "https://i.ytimg.com/vi/i8tS54L5v4A/maxresdefault.jpg"
+            },
+            stopbreathing: {
+                title: "STOP BREATHING",
+                artist: "Playboi Carti",
+                videoId: "nI2Rt4iYvMc",
+                thumbnail: "https://i.ytimg.com/vi/nI2Rt4iYvMc/maxresdefault.jpg"
+            }
+        };
+
+        // Playlist mappings
+        const playlists = {
+            xxtentacion: ['sad', 'changes', 'moonlight', 'jocelyn'],
+            juice: ['lucid', 'allgirls', 'robbery'],
+            carti: ['sky', 'stopbreathing']
+        };
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'fs': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Player ready
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                nextTrack();
+            } else if (event.data == YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                updatePlayButton();
+                document.querySelector('.track-item.playing')?.classList.remove('playing');
+            } else if (event.data == YT.PlayerState.PAUSED) {
+                isPlaying = false;
+                updatePlayButton();
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            bindEvents();
+        });
+
+        function bindEvents() {
+            // Track clicks
+            document.querySelectorAll('.track-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const trackId = this.dataset.track;
+                    playTrack(trackId);
+                    highlightTrack(this);
+                });
+            });
+
+            // Playlist clicks
+            document.querySelectorAll('.playlist-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('.track-item')) return;
+                    const playlistId = this.dataset.playlist;
+                    currentPlaylist = playlists[playlistId];
+                    document.querySelectorAll('.playlist-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Player controls
+            document.getElementById('playPause').addEventListener('click', togglePlay);
+            document.getElementById('nextTrack').addEventListener('click', nextTrack);
+            document.getElementById('prevTrack').addEventListener('click', prevTrack);
+
+            // Progress bar
+            document.getElementById('progressBar').addEventListener('click', seekTrack);
+        }
+
+        function playTrack(trackId) {
+            const track = tracks[trackId];
+            if (!track) return;
+
+            currentTrack = trackId;
+            document.getElementById('playerTitle').textContent = track.title;
+            document.getElementById('playerArtist').textContent = track.artist;
+            document.getElementById('playerThumbnail').src = track.thumbnail;
+            document.getElementById('musicPlayer').classList.add('active');
+
+            player.loadVideoById(track.videoId, 0);
+            player.playVideo();
+
+            // Update current playlist index
+            if (currentPlaylist.length > 0) {
+                currentIndex = currentPlaylist.indexOf(trackId);
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function nextTrack() {
+            if (currentPlaylist.length > 0 && currentIndex < currentPlaylist.length - 1) {
+                currentIndex++;
+                playTrack(currentPlaylist[currentIndex]);
+            } else {
+                // Loop to first track of current playlist
+                if (currentPlaylist.length > 0) {
+                    currentIndex = 0;
+                    playTrack(currentPlaylist[0]);
+                }
+            }
+        }
+
+        function prevTrack() {
+            if (currentPlaylist.length > 0 && currentIndex > 0) {
+                currentIndex--;
+                playTrack(currentPlaylist[currentIndex]);
+            } else {
+                // Go to last track of current playlist
+                if (currentPlaylist.length > 0) {
+                    currentIndex = currentPlaylist.length - 1;
+                    playTrack(currentPlaylist[currentIndex]);
+                }
+            }
+        }
+
+        function highlightTrack(element) {
+            document.querySelectorAll('.track-item').forEach(item => {
+                item.classList.remove('playing');
+            });
+            element.classList.add('playing');
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('playPause');
+            const icon = btn.querySelector('i');
+            icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        }
+
+        function seekTrack(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            player.seekTo(percent * player.getDuration(), true);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            } else if (e.code === 'ArrowRight') {
+                nextTrack();
+            } else if (e.code === 'ArrowLeft') {
+                prevTrack();
+            }
+        });
+    </script>
+</body>
+</html>
